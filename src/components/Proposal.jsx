@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { brl, plural } from '../lib/calc.js'
+import { brl, plural, PAY } from '../lib/calc.js'
 import { buildProposalPdf, savePdf } from '../lib/proposalPdf.js'
 import { TextField } from './Fields.jsx'
 import Step from './Step.jsx'
@@ -11,7 +11,6 @@ const EMPTY = {
   email: '',
   vendedor: '',
   validade: '',
-  pagamento: '',
   obs: '',
   modalidade: 'ambos',
 }
@@ -41,7 +40,7 @@ function validate(c) {
   return e
 }
 
-export default function Proposal({ s, rM, rA, discValue, onDisc, logos }) {
+export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos }) {
   const r = rM
   const [c, setC] = useState(EMPTY)
   const [errors, setErrors] = useState({})
@@ -137,7 +136,14 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, logos }) {
         )}
         <TextField {...f('vendedor')} label="Responsável pelo envio" placeholder="Nome e cargo" />
         <TextField {...f('validade')} label="Validade" small="dias" type="number" inputMode="numeric" placeholder="15" />
-        <TextField {...f('pagamento')} label="Pagamento" full placeholder="Ex.: Cartão de crédito, Pix ou boleto" />
+        <div className="field full">
+          <label htmlFor="pay">Forma de pagamento</label>
+          <select id="pay" value={s.pay} onChange={(e) => onPay(e.target.value)}>
+            {PAY.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        </div>
         <div className="field full">
           <label htmlFor="obs">Observações <small>opcional</small></label>
           <textarea id="obs" value={c.obs} placeholder="Ex.: Data prevista para início do uso" onChange={(e) => change('obs', e.target.value)} />

@@ -13,12 +13,26 @@ export const DEFAULTS = {
   mail: 112,  // e-mail / mês
   sto: 0.6,   // storage US$ / escritório / mês
   fx: 5.6,    // câmbio R$ por US$
-  fee: 5,     // taxa de pagamento % (estimativa)
+  pay: 'c30', // forma de pagamento da proposta
+  feePix: 0.99,  // % Pix
+  feeC30: 3.99,  // % cartão de crédito 1x, recebendo em 30 dias
+  feeC14: 4.48,  // % cartão de crédito 1x, recebendo em 14 dias
+  feeC0: 4.98,   // % cartão de crédito 1x, recebendo na hora
+  feeBol: 3.99,  // R$ por boleto (valor fixo)
   iss: 2,     // ISS % (definido em 12/11/2026)
   pis: 0.65,  // PIS % (definido em 12/11/2026)
   cofins: 3,  // COFINS % (definido em 12/11/2026)
   coop: 0,    // % da cooperativa sobre a venda (a definir)
 }
+
+// Formas de pagamento: key = parâmetro com a taxa; fixed = taxa em reais por cobrança
+export const PAY = [
+  { id: 'c30', key: 'feeC30', label: 'Cartão de crédito · recebe em 30 dias', client: 'Cartão de crédito' },
+  { id: 'c14', key: 'feeC14', label: 'Cartão de crédito · recebe em 14 dias', client: 'Cartão de crédito' },
+  { id: 'c0', key: 'feeC0', label: 'Cartão de crédito · recebe na hora', client: 'Cartão de crédito' },
+  { id: 'pix', key: 'feePix', label: 'Pix', client: 'Pix' },
+  { id: 'bol', key: 'feeBol', label: 'Boleto', client: 'Boleto bancário', fixed: true },
+]
 
 const brlFmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const brl0Fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
@@ -34,7 +48,10 @@ const pos = (v) => (Number.isFinite(v) && v >= 0 ? v : 0)
 // Normaliza os parâmetros digitados (strings) em números válidos
 export function normalize(raw) {
   const s = {}
-  for (const k of Object.keys(DEFAULTS)) s[k] = pos(parseFloat(raw[k]))
+  for (const k of Object.keys(DEFAULTS)) if (k !== 'pay') s[k] = pos(parseFloat(raw[k]))
+  s.payM = PAY.find((m) => m.id === raw.pay) || PAY[0]
+  s.pay = s.payM.id
+  s.payRate = s[s.payM.key] // % ou R$ (boleto)
   s.ux = Math.max(0, Math.round(s.ux))
   s.inc = Math.round(s.inc)
   s.users = s.inc + s.ux
@@ -46,7 +63,6 @@ export function normalize(raw) {
   s.gbCost = s.stoBRL / s.gbInc
   s.gbPrice = Math.round(s.gbx * s.fx * 100) / 100 // em reais
   s.tax = s.iss + s.pis + s.cofins // impostos sobre a venda, em %
-  s.rate = (s.fee + s.tax + s.coop) / 100
   return s
 }
 
@@ -62,7 +78,8 @@ export function plan(users, s, annual = false) {
   const list = ticket(users, s, gb)
   const price = annual ? round2(list * (1 - Math.min(s.disc, 100) / 100)) : list
   const sto = storageCost(s, gb)
-  const fee = (price * s.fee) / 100
+  // boleto: valor fixo por cobrança (no anual, uma cobrança por ano = 1/12 ao mês)
+  const fee = s.payM.fixed ? (annual ? s.payRate / 12 : s.payRate) : (price * s.payRate) / 100
   const tax = (price * s.tax) / 100
   const coop = (price * s.coop) / 100
   const contrib = price - sto - fee - tax - coop

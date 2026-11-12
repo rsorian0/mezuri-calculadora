@@ -25,7 +25,7 @@ export default function Results({ s, r }) {
           {r.extras > 0 && <Line label={`Usuários extras (${r.extras} × ${brl(s.ex)})`} value={brl(r.extras * s.ex)} />}
           {r.gb > 0 && <Line label={`Armazenamento extra (${r.gb} GB × ${brl(s.gbPrice)})`} value={brl(r.gbValue)} />}
           <Line label={`Storage (${s.gbInc + r.gb} GB)`} value={brl(r.sto)} minus />
-          <Line label={`Taxa de pagamento (${fmtP(s.fee)})`} value={brl(r.fee)} minus />
+          <Line label={`Taxa de pagamento (${s.payM.label.replace(' · ', ', ')}, ${s.payM.fixed ? brl(s.payRate) + ' por boleto' : fmtP(s.payRate)})`} value={brl(r.fee)} minus />
           <Line label={`Impostos (ISS ${fmtP(s.iss)} + PIS ${fmtP(s.pis)} + COFINS ${fmtP(s.cofins)})`} value={brl(r.tax)} minus />
           {s.coop > 0 && <Line label={`Cooperativa (${fmtP(s.coop)})`} value={brl(r.coop)} minus />}
           <Line label="Contribuição (antes do custo fixo)" value={brl(r.contrib)} className="sep" />

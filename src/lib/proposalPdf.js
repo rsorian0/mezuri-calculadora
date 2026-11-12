@@ -290,7 +290,7 @@ export async function buildProposalPdf(s, client, logos) {
 
   // ===== Condições =====
   const cond = []
-  if (c.pagamento) cond.push(['Pagamento', c.pagamento])
+  cond.push(['Pagamento', s.payM.client])
   if (ate) cond.push(['Validade', `${dias} dias, até ${fmtDate(ate)}`])
   cond.push(['Adicionais', `Usuário extra a ${brl(s.ex)}/mês e armazenamento adicional a ${brl(s.gbPrice)} por GB/mês.`])
   if (c.obs) cond.push(['Observações', c.obs])

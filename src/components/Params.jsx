@@ -53,12 +53,21 @@ export default function Params({ raw, s, onChange, saveState, onSave, onDiscard,
         <NumberField {...f('mail')} label="E-mail" prefix="R$" step={0.01} />
       </Group>
 
-      <Group title="Custos variáveis" summary={`${fmtP(s.fee)} + storage`}>
+      <Group title="Custos variáveis" summary="Storage e taxas">
         <div className="row2">
           <NumberField {...f('sto')} label="Storage" prefix="US$" step={0.01} />
           <NumberField {...f('fx')} label="Câmbio" prefix="R$" step={0.01} />
         </div>
-        <NumberField {...f('fee')} label="Taxa de pagamento" suffix="%" step={0.1} />
+        <span className="field-label sub-label">Taxa por forma de pagamento</span>
+        <div className="row2">
+          <NumberField {...f('feeC30')} label="Cartão · 30 dias" suffix="%" step={0.01} />
+          <NumberField {...f('feeC14')} label="Cartão · 14 dias" suffix="%" step={0.01} />
+        </div>
+        <div className="row2">
+          <NumberField {...f('feeC0')} label="Cartão · na hora" suffix="%" step={0.01} />
+          <NumberField {...f('feePix')} label="Pix" suffix="%" step={0.01} />
+        </div>
+        <NumberField {...f('feeBol')} label="Boleto" prefix="R$" step={0.01} />
       </Group>
 
       <Group title="Impostos sobre a venda" summary={fmtP(s.tax)}>

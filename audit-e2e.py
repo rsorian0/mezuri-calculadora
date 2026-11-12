@@ -1,15 +1,17 @@
 import re, json, subprocess, os, sys
 from playwright.sync_api import sync_playwright
 
-D=dict(ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=15,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,fee=5,iss=2,pis=0.65,cofins=3,coop=0)
+D=dict(ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=15,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,pay='c30',feePix=0.99,feeC30=3.99,feeC14=4.48,feeC0=4.98,feeBol=3.99,iss=2,pis=0.65,cofins=3,coop=0)
 def model(o):
     s={**D,**o}
     gbCost=s['sto']*s['fx']/s['gbInc']; gbPrice=round(s['gbx']*s['fx']*100)/100
     list_=s['p']+s['ux']*s['ex']+s['gb']*gbPrice
     ann=round(list_*(1-min(s['disc'],100)/100)*100)/100
     sto=s['sto']*s['fx']+s['gb']*gbCost
-    def prof(price):
-        return price-sto-price*s['fee']/100-price*(s['iss']+s['pis']+s['cofins'])/100-price*s['coop']/100-(s['dom']+s['srv']+s['mail'])
+    key={'c30':'feeC30','c14':'feeC14','c0':'feeC0','pix':'feePix','bol':'feeBol'}[s['pay']]
+    def prof(price,annual=False):
+        fee = (s['feeBol']/12 if annual else s['feeBol']) if s['pay']=='bol' else price*s[key]/100
+        return price-sto-fee-price*(s['iss']+s['pis']+s['cofins'])/100-price*s['coop']/100-(s['dom']+s['srv']+s['mail'])
     return list_, ann, prof(list_), prof(list_)/list_ if list_ else 0
 
 def num(t):
@@ -47,7 +49,8 @@ with sync_playwright() as p:
     # open all param groups
     while pg.locator('aside details:not([open]) > summary').count(): pg.locator('aside details:not([open]) > summary').first.click()
     def setf(k,v):
-        pg.fill(f'#{k}',str(v))
+        if k=='pay': pg.select_option('#pay',str(v))
+        else: pg.fill(f'#{k}',str(v))
     def reset_all():
         pg.fill('#ux','0')
         for k,v in D.items():
@@ -56,7 +59,7 @@ with sync_playwright() as p:
     scen+= [{'ux':3},{'ux':0,'gb':10},{'gb':30},{'ux':5,'gb':120},
             {'p':250},{'inc':6},{'inc':6,'ux':2},{'ex':35,'ux':3},{'gbInc':100,'gb':10},{'gbx':0.05,'gb':40},
             {'disc':0},{'disc':30},{'dom':10},{'srv':60},{'mail':200},{'sto':1.2,'gb':20},{'fx':6.1,'gb':20},
-            {'fee':3.5},{'iss':5},{'pis':1},{'cofins':4},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
+            {'pay':'pix'},{'pay':'c14'},{'pay':'c0'},{'pay':'bol'},{'pay':'bol','ux':3,'gb':20},{'pay':'pix','feePix':1.5},{'feeC30':4.5},{'pay':'bol','feeBol':5},{'iss':5},{'pis':1},{'cofins':4},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
     for o in scen:
         reset_all()
         for k,v in o.items(): setf(k,v)
@@ -145,7 +148,7 @@ with sync_playwright() as p:
         txt=subprocess.run(['pdftotext','-layout',path,'-'],capture_output=True,text=True).stdout
         pages=int(re.search(r'Pages:\s+(\d+)',subprocess.run(['pdfinfo',path],capture_output=True,text=True).stdout).group(1))
         return txt,pages
-    for mod,tag,pu,gb,ex in [('Mensal e anual','ambos',3,30,{'vendedor':'Rodrigo - Comercial','validade':'15','pagamento':'Pix ou cartão','obs':'Início previsto em dezembro'}),
+    for mod,tag,pu,gb,ex in [('Mensal e anual','ambos',3,30,{'vendedor':'Rodrigo - Comercial','validade':'15','obs':'Início previsto em dezembro'}),
                               ('Apenas mensal','mensal',None,None,None),('Apenas anual','anual',1,None,None)]:
         txt,pages=gen(mod,tag,pu,gb,ex)
         o={'ux':pu or 0,'gb':gb or 0}; L,A,_,_=model(o)
@@ -158,8 +161,9 @@ with sync_playwright() as p:
         for forb in ['Lucro','margem','Margem','Custo fixo','cooperativa','Cooperativa','ISS','COFINS']:
             if forb in txt: fails.append(f'PDF {tag}: vazou "{forb}"')
         if tag=='ambos':
-            for n in ['Rodrigo - Comercial','Pix ou cartão','Início previsto em dezembro','Usuários adicionais','Armazenamento adicional']:
+            for n in ['Rodrigo - Comercial','Início previsto em dezembro','Usuários adicionais','Armazenamento adicional']:
                 if n not in txt: fails.append(f'PDF ambos: faltou "{n}"')
+        if 'Pagamento' not in txt or 'Cartão de crédito' not in txt: fails.append(f'PDF {tag}: forma de pagamento ausente')
         if tag=='mensal' and 'Usuários adicionais' in txt: fails.append('PDF mensal: usuários adicionais indevido')
         print(tag,'páginas',pages)
     # mobile

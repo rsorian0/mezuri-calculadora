@@ -3,7 +3,7 @@ import { DEFAULTS } from './calc.js'
 // Parâmetros salvos ficam no navegador (localStorage), um por máquina/navegador.
 // Usuários e GB extras são do escritório da proposta, então não entram no salvo.
 const KEY = 'mezuri-calculadora-params'
-export const PER_PROPOSAL = ['ux', 'gb']
+export const PER_PROPOSAL = ['ux', 'gb', 'pay']
 export const SAVED_KEYS = Object.keys(DEFAULTS).filter((k) => !PER_PROPOSAL.includes(k))
 
 export function loadSaved() {
