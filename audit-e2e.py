@@ -1,9 +1,10 @@
 import re, json, subprocess, os, sys
 from playwright.sync_api import sync_playwright
 
-D=dict(share=10,ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=15,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,pay='c30',feePix=0.99,feeC30=3.99,feeC14=4.48,feeC0=4.98,feeC12=21.27,feeBol=3.99,iss=2,pis=0.65,cofins=3,coop=5)
-def model(o):
+D=dict(share=10,ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=5,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,pay='c30',feePix=0.99,feeC30=3.99,feeC14=4.48,feeC0=4.98,feeC12=21.27,feeBol=3.99,iss=2,pis=0.65,cofins=3,coop=5)
+def model(o, mod='mensal'):
     s={**D,**o}
+    if mod=='anual12': s['pay']='c12'
     gbCost=s['sto']*s['fx']/s['gbInc']; gbPrice=round(s['gbx']*s['fx']*100)/100
     list_=s['p']+s['ux']*s['ex']+s['gb']*gbPrice
     ann=round(list_*(1-min(s['disc'],100)/100)*100)/100
@@ -12,8 +13,10 @@ def model(o):
     def prof(price,annual=False):
         fee = (s['feeBol']/12 if annual else s['feeBol']) if s['pay']=='bol' else price*(s['feeC30'] if (s['pay']=='c12' and not annual) else s[key])/100
         return price-sto-fee-price*(s['iss']+s['pis']+s['cofins'])/100-price*s['coop']/100-(s['dom']+s['srv']+s['mail'])/s['share']
-    if s['pay']=='c12': return list_, ann, prof(ann,True), (prof(ann,True)/ann if ann else 0)
-    return list_, ann, prof(list_), prof(list_)/list_ if list_ else 0
+    isann = mod in ('anual','anual12')
+    price = ann if isann else list_
+    pr = prof(price, isann)
+    return list_, ann, pr, (pr/price if price else 0)
 
 def num(t):
     neg = '-' in t.split('R$')[0] or t.strip().startswith('-')
@@ -36,9 +39,11 @@ def read(pg):
     body=pg.inner_text('body').replace('−','-')
     body=body.replace('\u2212','-')
     mm=re.search(r'Mensal\s*\n\s*(R\$\s*[\d.,]+)',body); an=re.search(r'Anual · -?[\d.,]+%\s*\n\s*(R\$\s*[\d.,]+)',body)
-    return lucro,marg,num(mm.group(1)),num(an.group(1)) if an else None,det
+    sel=num(pg.locator('.prop-sum .opts strong').first.inner_text())
+    return lucro,marg,sel,det
 
 errs=[]
+LBL={'ambos':'Mensal e anual','mensal':'Mensal','anual':'Anual','anual12':'Anual parcelado em 12x'}
 with sync_playwright() as p:
     b=p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--no-sandbox'])
     ctx=b.new_context(viewport={'width':1366,'height':900},accept_downloads=True)
@@ -50,7 +55,8 @@ with sync_playwright() as p:
     # open all param groups
     while pg.locator('aside details:not([open]) > summary').count(): pg.locator('aside details:not([open]) > summary').first.click()
     def setf(k,v):
-        if k=='pay': pg.select_option('#pay',str(v))
+        if k=='pay':
+            if not pg.locator('#pay').is_disabled(): pg.select_option('#pay',str(v))
         else: pg.fill(f'#{k}',str(v))
     def reset_all():
         pg.fill('#ux','0')
@@ -60,16 +66,20 @@ with sync_playwright() as p:
     scen+= [{'ux':3},{'ux':0,'gb':10},{'gb':30},{'ux':5,'gb':120},
             {'p':250},{'inc':6},{'inc':6,'ux':2},{'ex':35,'ux':3},{'gbInc':100,'gb':10},{'gbx':0.05,'gb':40},
             {'disc':0},{'disc':30},{'dom':10},{'share':1},{'share':3,'ux':2},{'share':25,'gb':10},{'srv':60},{'mail':200},{'sto':1.2,'gb':20},{'fx':6.1,'gb':20},
-            {'pay':'pix'},{'pay':'c12'},{'pay':'c12','ux':3,'gb':20,'disc':20},{'pay':'c14'},{'pay':'c0'},{'pay':'bol'},{'pay':'bol','ux':3,'gb':20},{'pay':'pix','feePix':1.5},{'feeC30':4.5},{'pay':'bol','feeBol':5},{'iss':5},{'pis':1},{'cofins':4},{'coop':0},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
+            {'pay':'pix'},{'ux':3,'gb':20,'disc':20},{'pay':'c14'},{'pay':'c0'},{'pay':'bol'},{'pay':'bol','ux':3,'gb':20},{'pay':'pix','feePix':1.5},{'feeC30':4.5},{'pay':'bol','feeBol':5},{'iss':5},{'pis':1},{'cofins':4},{'coop':0},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
     for o in scen:
+      for mod in ['ambos','mensal','anual','anual12']:
+        pg.get_by_label(LBL[mod],exact=True).check()
         reset_all()
-        for k,v in o.items(): setf(k,v)
-        L,A,Pf,Mg=model(o)
-        lucro,marg,m,a,det=read(pg)
-        check(f'{o} preço mensal',m,L)
-        check(f'{o} preço anual',a,A)
-        check(f'{o} lucro',lucro,Pf)
-        check(f'{o} margem',marg,round(Mg*100,1),0.06)
+        for k,v in o.items():
+            if k=='disc' and mod=='mensal': continue
+            if k=='pay' and mod=='anual12': continue
+            setf(k,v)
+        L,A,Pf,Mg=model(o,mod)
+        lucro,marg,m,det=read(pg)
+        check(f'{o} {mod} preço',m,A if mod in ('anual','anual12') else L)
+        check(f'{o} {mod} lucro',lucro,Pf)
+        check(f'{o} {mod} margem',marg,round(Mg*100,1),0.06)
         s={**D,**o}
         if s['ux']==0: 
             if 'Usuários extras' in det: fails.append(f'{o}: linha usuários extras indevida')
@@ -135,12 +145,13 @@ with sync_playwright() as p:
     if 'E-mail inválido' not in pg.inner_text('body'): fails.append('email inválido aceito')
     # PDFs
     os.makedirs('/tmp/audit',exist_ok=True)
-    def gen(mod,tag,pu=None,gb=None,extra=None):
+    def gen(mod,tag,pu=None,gb=None,extra=None,pay=None):
+        pg.get_by_label(mod,exact=True).check()
         reset_all()
+        if pay: pg.select_option('#pay',pay)
         if pu: pg.fill('#ux',str(pu))
         if gb: pg.fill('#gb',str(gb))
         pg.fill('#nome','Maria Souza'); pg.fill('#empresa','Studio Teste Arquitetura'); pg.fill('#telefone','82999998888'); pg.fill('#email','maria@studio.com.br')
-        pg.get_by_label(re.compile(mod)).check()
         if extra:
             for k,v in extra.items(): pg.fill(f'#{k}',v)
         with pg.expect_download(timeout=20000) as d:
@@ -149,23 +160,26 @@ with sync_playwright() as p:
         txt=subprocess.run(['pdftotext','-layout',path,'-'],capture_output=True,text=True).stdout
         pages=int(re.search(r'Pages:\s+(\d+)',subprocess.run(['pdfinfo',path],capture_output=True,text=True).stdout).group(1))
         return txt,pages
-    for mod,tag,pu,gb,ex in [('Mensal e anual','ambos',3,30,{'vendedor':'Rodrigo - Comercial','validade':'15','obs':'Início previsto em dezembro'}),
-                              ('Apenas mensal','mensal',None,None,None),('Apenas anual','anual',1,None,None)]:
-        txt,pages=gen(mod,tag,pu,gb,ex)
+    for mod,tag,pu,gb,ex,pay in [('Mensal e anual','ambos',3,30,{'vendedor':'Rodrigo - Comercial','validade':'15','obs':'Início previsto em dezembro'},None),
+                              ('Mensal','mensal',3,30,None,None),('Anual','anual',1,None,None,None),('Anual parcelado em 12x','anual12',2,10,None,None)]:
+        txt,pages=gen(mod,tag,pu,gb,ex,pay)
         o={'ux':pu or 0,'gb':gb or 0}; L,A,_,_=model(o)
         def f(v): return ('R$ '+f'{v:,.2f}'.replace(',','X').replace('.',',').replace('X','.'))
         need=['Maria Souza','Studio Teste Arquitetura','(82) 99999-8888','maria@studio.com.br','36.899.179/0001-08']
-        if mod!='Apenas anual': need.append(f(L))
-        if mod!='Apenas mensal': need.append(f(A))
+        if tag in ('ambos','mensal'): need.append(f(L))
+        if tag in ('ambos','anual','anual12'): need.append(f(A))
         for n in need:
             if n not in txt: fails.append(f'PDF {tag}: faltou "{n}"')
-        for forb in ['Lucro','margem','Margem','Custo fixo','cooperativa','Cooperativa','ISS','COFINS']:
+        if tag=='mensal' and f(A) in txt: fails.append('PDF mensal: mostrou o valor anual')
+        if tag in ('ambos','anual','anual12') and 'Economia de' not in txt: fails.append(f'PDF {tag}: faltou a economia do anual')
+        for forb in ['Lucro','margem','Margem','Custo fixo','cooperativa','Cooperativa','ISS','COFINS','30 dias','14 dias','na hora']:
             if forb in txt: fails.append(f'PDF {tag}: vazou "{forb}"')
         if tag=='ambos':
-            for n in ['Rodrigo - Comercial','Início previsto em dezembro','Usuários adicionais','Armazenamento adicional']:
+            for n in ['Rodrigo - Comercial','Início previsto em dezembro','Usuários adicionais','Armazenamento adicional','FORMAS DE CONTRATAÇÃO']:
                 if n not in txt: fails.append(f'PDF ambos: faltou "{n}"')
+        if tag=='anual12' and 'em até 12x sem juros' not in txt: fails.append('PDF 12x: texto do 12x ausente')
+        if tag!='anual12' and '12x' in txt: fails.append(f'PDF {tag}: 12x indevido')
         if 'Pagamento' not in txt or 'Cartão de crédito' not in txt: fails.append(f'PDF {tag}: forma de pagamento ausente')
-        if tag=='mensal' and 'Usuários adicionais' in txt: fails.append('PDF mensal: usuários adicionais indevido')
         print(tag,'páginas',pages)
     # mobile
     m=ctx.new_page(); m.set_viewport_size({'width':390,'height':844}); m.goto('http://localhost:4173/'); m.wait_for_timeout(300)

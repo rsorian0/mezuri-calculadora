@@ -84,7 +84,7 @@ export async function buildProposalPdf(s, client, logos) {
   const r = plan(s.users, s)
   const rA = plan(s.users, s, true)
   const c = Object.fromEntries(Object.entries(client).map(([k, v]) => [k, clean(v)]))
-  const mode = ['mensal', 'anual'].includes(client.modalidade) ? client.modalidade : 'ambos'
+  const mode = ['mensal', 'anual', 'anual12'].includes(client.modalidade) ? client.modalidade : 'ambos'
   // validade é opcional: sem ela, o PDF não mostra data de validade
   const diasNum = Math.round(parseFloat(client.validade))
   const dias = Number.isFinite(diasNum) && diasNum > 0 ? diasNum : null
@@ -235,12 +235,12 @@ export async function buildProposalPdf(s, client, logos) {
     if (l2) doc.text(l2, x + 6, y + 29.5)
   }
   const mL1 = `${brl(r.price * 12)} em 12 meses`
-  const aL1 = `Contrato de 12 meses · ${brl(rA.price * 12)} no ano`
+  const aL1 = mode === 'anual12' ? `Em até 12x sem juros no cartão · ${brl(rA.price * 12)} no ano` : `Contrato de 12 meses · ${brl(rA.price * 12)} no ano`
   const aL2 = `Economia de ${brl(saving)} em relação ao mensal`
   if (mode === 'mensal') {
     drawBox(M, W, true, 'PLANO MENSAL', brl(r.price), mL1, `Equivale a ${brl(r.price / r.users)} por usuário ao mês`)
-  } else if (mode === 'anual') {
-    drawBox(M, W, true, 'PLANO ANUAL', brl(rA.price), aL1, aL2, `${discTxt} de desconto`)
+  } else if (mode === 'anual' || mode === 'anual12') {
+    drawBox(M, W, true, mode === 'anual12' ? 'PLANO ANUAL PARCELADO EM 12X' : 'PLANO ANUAL', brl(rA.price), aL1, aL2, `${discTxt} de desconto`)
   } else {
     const gap = 5
     const half = (W - gap) / 2
@@ -290,7 +290,7 @@ export async function buildProposalPdf(s, client, logos) {
 
   // ===== Condições =====
   const cond = []
-  cond.push(['Pagamento', s.payM.annualOnly && c.modalidade === 'ambos' ? 'Cartão de crédito (anual em até 12x sem juros)' : s.payM.client])
+  cond.push(['Pagamento', s.payM.client])
   if (ate) cond.push(['Validade', `${dias} dias, até ${fmtDate(ate)}`])
   cond.push(['Adicionais', `Usuário extra a ${brl(s.ex)}/mês e armazenamento adicional a ${brl(s.gbPrice)} por GB/mês.`])
   if (c.obs) cond.push(['Observações', c.obs])

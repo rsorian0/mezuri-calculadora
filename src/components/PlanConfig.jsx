@@ -1,4 +1,4 @@
-import { brl, plural } from '../lib/calc.js'
+import { brl, fmtP, plural } from '../lib/calc.js'
 import Step from './Step.jsx'
 
 function Stepper({ id, label, value, onChange, step = 1, min = 0, unit, hint }) {
@@ -29,12 +29,13 @@ export default function PlanConfig({ raw, s, r, onChange }) {
           <Stepper id="gb" label="Armazenamento extra" value={raw.gb} onChange={onChange} step={10} unit="GB" hint={`${s.gbInc} GB inclusos · extra a ${brl(s.gbPrice)}/GB`} />
         </div>
         <div className="price-card" aria-live="polite">
-          <span className="price-label">Mensalidade</span>
+          <span className="price-label">{r.annual ? 'Mensalidade · plano anual' : 'Mensalidade'}</span>
           <div className="price-big">{brl(r.price)}<small>/mês</small></div>
           <ul className="price-parts">
             <li><span>Plano base · {s.inc} usuários, {s.gbInc} GB</span><span>{brl(s.p)}</span></li>
             {r.extras > 0 && <li><span>{plural(r.extras, 'usuário extra', 'usuários extras')}</span><span>{brl(r.extras * s.ex)}</span></li>}
             {r.gb > 0 && <li><span>{r.gb} GB extras</span><span>{brl(r.gbValue)}</span></li>}
+            {r.annual && r.discount > 0 && <li><span>Desconto do plano anual ({fmtP(s.disc)})</span><span>− {brl(r.discount)}</span></li>}
           </ul>
           <span className="price-foot">{brl(r.price / r.users)} por usuário · {s.gbInc + r.gb} GB no total</span>
         </div>

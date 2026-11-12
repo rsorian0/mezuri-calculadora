@@ -8,13 +8,14 @@ export const DEFAULTS = {
   gbInc: 50,  // armazenamento incluso no plano (GB)
   gb: 0,      // GB extras contratados (projeção por plano)
   gbx: 0.036, // preço do GB extra (US$ por GB / mês)
-  disc: 15,   // desconto do plano anual (%)
+  disc: 5,    // desconto do plano anual (%) (definido em 12/11/2026)
   dom: 3,     // domínio / mês
   srv: 42,    // servidor / mês
   mail: 112,  // e-mail / mês
   sto: 0.6,   // storage US$ / escritório / mês
   fx: 5.6,    // câmbio R$ por US$
   pay: 'c30', // forma de pagamento da proposta
+  mod: 'ambos', // modalidade da proposta: ambos | mensal | anual | anual12
   feePix: 0.99,  // % Pix
   feeC30: 3.99,  // % cartão de crédito 1x, recebendo em 30 dias
   feeC14: 4.48,  // % cartão de crédito 1x, recebendo em 14 dias
@@ -32,7 +33,7 @@ export const PAY = [
   { id: 'c30', key: 'feeC30', label: 'Cartão de crédito · recebe em 30 dias', client: 'Cartão de crédito' },
   { id: 'c14', key: 'feeC14', label: 'Cartão de crédito · recebe em 14 dias', client: 'Cartão de crédito' },
   { id: 'c0', key: 'feeC0', label: 'Cartão de crédito · recebe na hora', client: 'Cartão de crédito' },
-  { id: 'c12', key: 'feeC12', label: 'Cartão de crédito · 12x sem juros (anual)', client: 'Cartão de crédito em até 12x sem juros', annualOnly: true },
+  { id: 'c12', key: 'feeC12', label: 'Cartão de crédito · 12x sem juros', client: 'Cartão de crédito em até 12x sem juros', annualOnly: true },
   { id: 'pix', key: 'feePix', label: 'Pix', client: 'Pix' },
   { id: 'bol', key: 'feeBol', label: 'Boleto', client: 'Boleto bancário', fixed: true },
 ]
@@ -51,8 +52,10 @@ const pos = (v) => (Number.isFinite(v) && v >= 0 ? v : 0)
 // Normaliza os parâmetros digitados (strings) em números válidos
 export function normalize(raw) {
   const s = {}
-  for (const k of Object.keys(DEFAULTS)) if (k !== 'pay') s[k] = pos(parseFloat(raw[k]))
-  s.payM = PAY.find((m) => m.id === raw.pay) || PAY[0]
+  for (const k of Object.keys(DEFAULTS)) if (k !== 'pay' && k !== 'mod') s[k] = pos(parseFloat(raw[k]))
+  s.mod = ['ambos', 'mensal', 'anual', 'anual12'].includes(raw.mod) ? raw.mod : 'ambos'
+  // anual parcelado em 12x usa a taxa do cartão 12x; as demais modalidades usam a forma escolhida
+  s.payM = s.mod === 'anual12' ? PAY.find((m) => m.annualOnly) : PAY.find((m) => m.id === raw.pay && !m.annualOnly) || PAY[0]
   s.pay = s.payM.id
   s.payRate = s[s.payM.key] // % ou R$ (boleto)
   s.ux = Math.max(0, Math.round(s.ux))

@@ -19,6 +19,8 @@ export default function App() {
   const s = useMemo(() => normalize(raw), [raw])
   const rM = plan(s.users, s, false)
   const rA = plan(s.users, s, true)
+  const mod = s.mod
+  const rSel = mod === 'anual' || mod === 'anual12' ? rA : rM // resultado mostrado: mensal, ou anual nas modalidades anuais
   const mezuriLogo = useRef(null)
   const kunlatekLogo = useRef(null)
 
@@ -57,9 +59,9 @@ export default function App() {
         <div className="container">
           <div className="grid">
             <div className="flow">
-              <PlanConfig raw={raw} s={s} r={rM} onChange={change} />
-              <Results s={s} r={s.payM.annualOnly ? rA : rM} />
-              <Proposal s={s} rM={rM} rA={rA} discValue={raw.disc} onDisc={(v) => change('disc', v)} onPay={(v) => change('pay', v)} logos={{ mezuri: mezuriLogo, kunlatek: kunlatekLogo }} />
+              <PlanConfig raw={raw} s={s} r={rSel} onChange={change} />
+              <Results s={s} r={rSel} />
+              <Proposal s={s} rM={rM} rA={rA} mod={mod} onMod={(v) => change('mod', v)} discValue={raw.disc} onDisc={(v) => change('disc', v)} onPay={(v) => change('pay', v)} logos={{ mezuri: mezuriLogo, kunlatek: kunlatekLogo }} />
             </div>
             <Params
               raw={raw}

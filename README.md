@@ -38,8 +38,8 @@ src/
 - Usuário extra: R$ 20/mês (decidido em 12/11/2026)
 - GB extra: preço por GB definido direto nos parâmetros (padrão US$ 0,036 por GB/mês, convertido pelo câmbio); o custo do GB (US$ 0,60 ÷ 50 GB × câmbio) aparece como referência
 - Custo fixo: domínio R$ 3 + servidor R$ 42 + e-mail R$ 112 = R$ 157/mês
-- Taxa de pagamento por forma (tabela do link de pagamento do Mercado Pago): cartão 3,99% (30 dias), 4,48% (14 dias), 4,98% (na hora), Pix 0,99% e boleto R$ 3,99 fixo. A forma é escolhida na proposta e alimenta o cálculo do lucro. Cartão 12x sem juros (só no anual): 21,27% (17,28% de parcelamento + 3,99%); ao escolhê-lo o resultado mostra o plano anual
-- Desconto do plano anual: 15% (editável)
+- Taxa de pagamento por forma (tabela do link de pagamento do Mercado Pago): cartão 3,99% (30 dias), 4,48% (14 dias), 4,98% (na hora), Pix 0,99% e boleto R$ 3,99 fixo. A forma é escolhida na proposta e alimenta o cálculo do lucro. Cartão 12x sem juros (modalidade anual parcelado em 12x): 21,27% (17,28% de parcelamento + 3,99%)
+- Desconto do plano anual: 5% (editável)
 - Impostos por venda: ISS 2%, PIS 0,65% e COFINS 3% (total 5,65%)
 - Cooperativa: 5% retidos sobre cada venda (parâmetro editável)
 - Publicação: GitHub Pages pelo workflow `.github/workflows/deploy.yml` (a cada push na `main`)
@@ -52,4 +52,4 @@ O PDF mostra ao cliente só preço e condições, nunca custos ou margem.
 
 ## Plano anual
 
-Na seção "Gerar proposta para o cliente", escolha se o PDF mostra só o mensal, só o anual ou os dois lado a lado. Com o anual, aparece o campo "Desconto no plano anual" (padrão 15%), que reduz a mensalidade no contrato de 12 meses. A projeção de lucro no topo usa sempre o preço mensal.
+Na seção "Proposta para o cliente", escolha a modalidade: mensal e anual, mensal, anual ou anual parcelado em 12x. O PDF mostra só o que foi escolhido, e o preço, o resultado e o lucro da tela seguem a escolha (nas modalidades anuais, o resultado é o do plano anual). Nas modalidades com anual aparece o campo "Desconto no plano anual" (padrão 5%), que reduz a mensalidade no contrato de 12 meses. No anual em 12x a forma de pagamento é fixa em cartão de crédito 12x sem juros.

@@ -12,13 +12,13 @@ const EMPTY = {
   vendedor: '',
   validade: '',
   obs: '',
-  modalidade: 'ambos',
 }
 
 const MODALIDADES = [
   { id: 'ambos', label: 'Mensal e anual' },
-  { id: 'mensal', label: 'Apenas mensal' },
-  { id: 'anual', label: 'Apenas anual' },
+  { id: 'mensal', label: 'Mensal' },
+  { id: 'anual', label: 'Anual' },
+  { id: 'anual12', label: 'Anual parcelado em 12x' },
 ]
 
 // (82) 99999-9999 / (82) 3333-3333
@@ -40,7 +40,7 @@ function validate(c) {
   return e
 }
 
-export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos }) {
+export default function Proposal({ s, rM, rA, mod, onMod, discValue, onDisc, onPay, logos }) {
   const r = rM
   const [c, setC] = useState(EMPTY)
   const [errors, setErrors] = useState({})
@@ -56,7 +56,6 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
 
   const change = (id, value) => {
     const v = id === 'telefone' ? maskPhone(value) : value
-    if (id === 'modalidade' && value === 'mensal' && s.payM.annualOnly) onPay('c30')
     setC((prev) => ({ ...prev, [id]: v }))
     if (errors[id]) setErrors((prev) => ({ ...prev, [id]: undefined }))
   }
@@ -74,7 +73,7 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
     setBusy(true)
     toast('Gerando PDF...', false, true)
     try {
-      const out = await buildProposalPdf(s, c, { mezuri: logos.mezuri.current, kunlatek: logos.kunlatek.current })
+      const out = await buildProposalPdf(s, { ...c, modalidade: mod }, { mezuri: logos.mezuri.current, kunlatek: logos.kunlatek.current })
       await savePdf(out)
       toast('PDF gerado.')
     } catch (err) {
@@ -102,17 +101,17 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
 
         <div className="section-label full">Condições</div>
         <div className="field full">
-          <span className="field-label" id="mod-label">Modalidades apresentadas</span>
+          <span className="field-label" id="mod-label">Modalidade</span>
           <div className="choice" role="radiogroup" aria-labelledby="mod-label">
             {MODALIDADES.map((m) => (
               <label key={m.id}>
-                <input type="radio" name="modalidade" value={m.id} checked={c.modalidade === m.id} onChange={() => change('modalidade', m.id)} />
+                <input type="radio" name="modalidade" value={m.id} checked={mod === m.id} onChange={() => onMod(m.id)} />
                 {m.label}
               </label>
             ))}
           </div>
         </div>
-        {c.modalidade !== 'mensal' && (
+        {mod !== 'mensal' && (
           <div className="field full annual-box">
             <div className="annual-row">
               <label htmlFor="disc">Desconto no plano anual</label>
@@ -139,8 +138,8 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
         <TextField {...f('validade')} label="Validade" small="dias" type="number" inputMode="numeric" placeholder="15" />
         <div className="field full">
           <label htmlFor="pay">Forma de pagamento</label>
-          <select id="pay" value={s.pay} onChange={(e) => onPay(e.target.value)}>
-            {PAY.filter((m) => !m.annualOnly || c.modalidade !== 'mensal').map((m) => (
+          <select id="pay" value={s.pay} onChange={(e) => onPay(e.target.value)} disabled={s.payM.annualOnly}>
+            {(s.payM.annualOnly ? PAY.filter((m) => m.annualOnly) : PAY.filter((m) => !m.annualOnly)).map((m) => (
               <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>
@@ -154,8 +153,8 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
           <div className="prop-sum">
             <span className="prop-sum-l">Plano de {plural(r.users, 'usuário', 'usuários')} · {s.gbInc + r.gb} GB</span>
             <div className="opts">
-              {c.modalidade !== 'anual' && <div><span>Mensal</span><strong>{brl(rM.price)}</strong></div>}
-              {c.modalidade !== 'mensal' && <div><span>Anual · −{s.disc.toLocaleString('pt-BR')}%</span><strong>{brl(rA.price)}</strong></div>}
+              {(mod === 'mensal' || mod === 'ambos') && <div><span>Mensal</span><strong>{brl(rM.price)}</strong></div>}
+              {mod !== 'mensal' && <div><span>{mod === 'anual12' ? 'Anual em 12x' : 'Anual'} · −{s.disc.toLocaleString('pt-BR')}%</span><strong>{brl(rA.price)}</strong></div>}
             </div>
           </div>
           <button className="btn btn-primary btn-lg" type="submit" disabled={busy}>
