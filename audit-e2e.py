@@ -182,7 +182,7 @@ with sync_playwright() as p:
             if n not in txt: fails.append(f'PDF {tag}: faltou "{n}"')
         if tag=='mensal' and f(A) in txt: fails.append('PDF mensal: mostrou o valor anual')
         if tag in ('ambos','anual','anual12') and 'Economia de' not in txt: fails.append(f'PDF {tag}: faltou a economia do anual')
-        for forb in ['Lucro','margem','Margem','Custo fixo','cooperativa','Cooperativa','ISS','COFINS','30 dias','14 dias','na hora','ACEITE','ASSINATURA','Um produto','mezuri · gestão']:
+        for forb in ['Lucro','margem','Margem','Custo fixo','cooperativa','Cooperativa','ISS','COFINS','30 dias','14 dias','na hora','ACEITE','PRÓXIMOS PASSOS','O mezuri centraliza','ASSINATURA','Um produto','mezuri · gestão']:
             if forb in txt: fails.append(f'PDF {tag}: vazou "{forb}"')
         if tag=='ambos':
             for n in ['Rodrigo - Comercial','Início previsto em dezembro','Usuários adicionais','Armazenamento adicional','FORMAS DE CONTRATAÇÃO']:

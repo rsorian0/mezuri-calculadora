@@ -175,15 +175,6 @@ export async function buildProposalPdf(s, client, logos) {
     y += cardH + 6
   }
 
-  // ===== Introdução =====
-  font('normal', 10.5, C.fg2)
-  const intro = doc.splitTextToSize(
-    'O mezuri centraliza projetos, tarefas, prazos e o histórico de responsabilidades e entregas do escritório, com acesso por perfil para cada integrante.',
-    W
-  )
-  doc.text(intro, M, y)
-  y += intro.length * 5 + 5
-
   // ===== Composição do plano =====
   section('COMPOSIÇÃO DO PLANO')
   const rows = [['Plano mezuri', `Até ${s.inc} usuários e ${s.gbInc} GB de armazenamento`, brl(s.p)]]
@@ -259,43 +250,32 @@ export async function buildProposalPdf(s, client, logos) {
   }
   y += BOX + 7
 
-  // ===== Incluso + próximos passos (duas colunas) =====
+  // ===== O que está incluso (duas colunas) =====
   const incluso = [
     'Gestão de projetos, tarefas, prazos e responsáveis',
     'Histórico de quem fez o quê em cada projeto',
     `Armazenamento de arquivos (${gbTotal} GB)`,
     'Acesso por perfil para cada integrante',
+    'Diagnóstico inicial gratuito',
+    'Suporte durante o uso',
   ]
-  const passos = ['Aprovação da proposta', 'Criação do ambiente do escritório', 'Diagnóstico gratuito e início do uso']
   const colW = (W - 8) / 2
-  const blockH = 8 + incluso.length * 6
-  ensure(blockH)
-  const top = y
+  const rowsInc = Math.ceil(incluso.length / 2)
+  ensure(8 + rowsInc * 6)
   label(doc, 'O QUE ESTÁ INCLUSO', M, y)
-  let yl = y + 6.5
-  for (const b of incluso) {
+  const y0 = y + 6.5
+  incluso.forEach((b, k) => {
+    const x = M + (k % 2) * (colW + 8)
+    const yy = y0 + Math.floor(k / 2) * 6
     // ícone de check
     doc.setDrawColor(C.pos)
     doc.setLineWidth(0.6)
-    doc.line(M + 0.3, yl - 1.3, M + 1.3, yl - 0.3)
-    doc.line(M + 1.3, yl - 0.3, M + 3.1, yl - 2.6)
+    doc.line(x + 0.3, yy - 1.3, x + 1.3, yy - 0.3)
+    doc.line(x + 1.3, yy - 0.3, x + 3.1, yy - 2.6)
     font('normal', 9.5, C.fg)
-    doc.text(b, M + 5.5, yl)
-    yl += 6
-  }
-  const xr = M + colW + 8
-  label(doc, 'PRÓXIMOS PASSOS', xr, top)
-  let yr = top + 6.5
-  passos.forEach((p, i) => {
-    doc.setFillColor(C.navy)
-    doc.circle(xr + 1.9, yr - 1.25, 2.1, 'F')
-    font('bold', 7, '#ffffff')
-    doc.text(String(i + 1), xr + 1.9, yr - 0.2, { align: 'center' })
-    font('normal', 9.5, C.fg)
-    doc.text(p, xr + 6, yr)
-    yr += 7.5
+    doc.text(b, x + 5.5, yy)
   })
-  y = Math.max(yl, yr) + 3
+  y = y0 + (rowsInc - 1) * 6 + 10
 
   // ===== Condições =====
   const cond = []
