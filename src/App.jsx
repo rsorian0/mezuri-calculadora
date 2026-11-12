@@ -58,7 +58,7 @@ export default function App() {
           <div className="grid">
             <div className="flow">
               <PlanConfig raw={raw} s={s} r={rM} onChange={change} />
-              <Results s={s} r={rM} />
+              <Results s={s} r={s.payM.annualOnly ? rA : rM} />
               <Proposal s={s} rM={rM} rA={rA} discValue={raw.disc} onDisc={(v) => change('disc', v)} onPay={(v) => change('pay', v)} logos={{ mezuri: mezuriLogo, kunlatek: kunlatekLogo }} />
             </div>
             <Params

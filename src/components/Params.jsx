@@ -67,9 +67,12 @@ export default function Params({ raw, s, onChange, saveState, onSave, onDiscard,
         </div>
         <div className="row2">
           <NumberField {...f('feeC0')} label="Cartão · na hora" suffix="%" step={0.01} />
-          <NumberField {...f('feePix')} label="Pix" suffix="%" step={0.01} />
+          <NumberField {...f('feeC12')} label="Cartão · 12x (anual)" suffix="%" step={0.01} />
         </div>
-        <NumberField {...f('feeBol')} label="Boleto" prefix="R$" step={0.01} />
+        <div className="row2">
+          <NumberField {...f('feePix')} label="Pix" suffix="%" step={0.01} />
+          <NumberField {...f('feeBol')} label="Boleto" prefix="R$" step={0.01} />
+        </div>
       </Group>
 
       <Group title="Impostos sobre a venda" summary={fmtP(s.tax)}>

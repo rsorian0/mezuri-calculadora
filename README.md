@@ -38,7 +38,7 @@ src/
 - Usuário extra: R$ 20/mês (decidido em 12/11/2026)
 - GB extra: preço por GB definido direto nos parâmetros (padrão US$ 0,036 por GB/mês, convertido pelo câmbio); o custo do GB (US$ 0,60 ÷ 50 GB × câmbio) aparece como referência
 - Custo fixo: domínio R$ 3 + servidor R$ 42 + e-mail R$ 112 = R$ 157/mês
-- Taxa de pagamento por forma (tabela do link de pagamento do Mercado Pago): cartão 3,99% (30 dias), 4,48% (14 dias), 4,98% (na hora), Pix 0,99% e boleto R$ 3,99 fixo. A forma é escolhida na proposta e alimenta o cálculo do lucro
+- Taxa de pagamento por forma (tabela do link de pagamento do Mercado Pago): cartão 3,99% (30 dias), 4,48% (14 dias), 4,98% (na hora), Pix 0,99% e boleto R$ 3,99 fixo. A forma é escolhida na proposta e alimenta o cálculo do lucro. Cartão 12x sem juros (só no anual): 21,27% (17,28% de parcelamento + 3,99%); ao escolhê-lo o resultado mostra o plano anual
 - Desconto do plano anual: 15% (editável)
 - Impostos por venda: ISS 2%, PIS 0,65% e COFINS 3% (total 5,65%)
 - Cooperativa: 5% retidos sobre cada venda (parâmetro editável)

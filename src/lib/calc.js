@@ -19,6 +19,7 @@ export const DEFAULTS = {
   feeC30: 3.99,  // % cartão de crédito 1x, recebendo em 30 dias
   feeC14: 4.48,  // % cartão de crédito 1x, recebendo em 14 dias
   feeC0: 4.98,   // % cartão de crédito 1x, recebendo na hora
+  feeC12: 21.27, // % cartão 12x sem juros para o cliente (17,28% + 3,99%), só no anual
   feeBol: 3.99,  // R$ por boleto (valor fixo)
   iss: 2,     // ISS % (definido em 12/11/2026)
   pis: 0.65,  // PIS % (definido em 12/11/2026)
@@ -31,6 +32,7 @@ export const PAY = [
   { id: 'c30', key: 'feeC30', label: 'Cartão de crédito · recebe em 30 dias', client: 'Cartão de crédito' },
   { id: 'c14', key: 'feeC14', label: 'Cartão de crédito · recebe em 14 dias', client: 'Cartão de crédito' },
   { id: 'c0', key: 'feeC0', label: 'Cartão de crédito · recebe na hora', client: 'Cartão de crédito' },
+  { id: 'c12', key: 'feeC12', label: 'Cartão de crédito · 12x sem juros (anual)', client: 'Cartão de crédito em até 12x sem juros', annualOnly: true },
   { id: 'pix', key: 'feePix', label: 'Pix', client: 'Pix' },
   { id: 'bol', key: 'feeBol', label: 'Boleto', client: 'Boleto bancário', fixed: true },
 ]
@@ -81,7 +83,8 @@ export function plan(users, s, annual = false) {
   const price = annual ? round2(list * (1 - Math.min(s.disc, 100) / 100)) : list
   const sto = storageCost(s, gb)
   // boleto: valor fixo por cobrança (no anual, uma cobrança por ano = 1/12 ao mês)
-  const fee = s.payM.fixed ? (annual ? s.payRate / 12 : s.payRate) : (price * s.payRate) / 100
+  const rate = s.payM.annualOnly && !annual ? s.feeC30 : s.payRate // 12x só vale no anual
+  const fee = s.payM.fixed ? (annual ? s.payRate / 12 : s.payRate) : (price * rate) / 100
   const tax = (price * s.tax) / 100
   const coop = (price * s.coop) / 100
   const contrib = price - sto - fee - tax - coop

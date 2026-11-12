@@ -56,6 +56,7 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
 
   const change = (id, value) => {
     const v = id === 'telefone' ? maskPhone(value) : value
+    if (id === 'modalidade' && value === 'mensal' && s.payM.annualOnly) onPay('c30')
     setC((prev) => ({ ...prev, [id]: v }))
     if (errors[id]) setErrors((prev) => ({ ...prev, [id]: undefined }))
   }
@@ -139,7 +140,7 @@ export default function Proposal({ s, rM, rA, discValue, onDisc, onPay, logos })
         <div className="field full">
           <label htmlFor="pay">Forma de pagamento</label>
           <select id="pay" value={s.pay} onChange={(e) => onPay(e.target.value)}>
-            {PAY.map((m) => (
+            {PAY.filter((m) => !m.annualOnly || c.modalidade !== 'mensal').map((m) => (
               <option key={m.id} value={m.id}>{m.label}</option>
             ))}
           </select>

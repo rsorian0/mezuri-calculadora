@@ -8,7 +8,7 @@ export default function Results({ s, r }) {
     <div className="card">
       <Step
         n={2}
-        title="Resultado por escritório"
+        title={r.annual ? 'Resultado por escritório · plano anual' : 'Resultado por escritório'}
         aside={<MarginPill value={r.margin} positive={r.pro >= 0} />}
       />
       <div className="kpis">
@@ -24,6 +24,7 @@ export default function Results({ s, r }) {
           <Line label={`Plano base (até ${s.inc} usuários, ${s.gbInc} GB)`} value={brl(s.p)} />
           {r.extras > 0 && <Line label={`Usuários extras (${r.extras} × ${brl(s.ex)})`} value={brl(r.extras * s.ex)} />}
           {r.gb > 0 && <Line label={`Armazenamento extra (${r.gb} GB × ${brl(s.gbPrice)})`} value={brl(r.gbValue)} />}
+          {r.annual && r.discount > 0 && <Line label={`Desconto do plano anual (${fmtP(s.disc)})`} value={brl(r.discount)} minus />}
           <Line label={`Storage (${s.gbInc + r.gb} GB)`} value={brl(r.sto)} minus />
           <Line label={`Taxa de pagamento (${s.payM.label.replace(' · ', ', ')}, ${s.payM.fixed ? brl(s.payRate) + ' por boleto' : fmtP(s.payRate)})`} value={brl(r.fee)} minus />
           <Line label={`Impostos (ISS ${fmtP(s.iss)} + PIS ${fmtP(s.pis)} + COFINS ${fmtP(s.cofins)})`} value={brl(r.tax)} minus />
