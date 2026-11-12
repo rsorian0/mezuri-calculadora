@@ -1,7 +1,6 @@
 import { brl, plan } from './calc.js'
 
 const NAVY = '#1a2035'
-const KUNLATEK = '#4711cb'
 
 // Converte um <svg> da página em PNG na cor pedida, cortando as bordas transparentes
 export function svgToPng(svgEl, color) {
@@ -97,7 +96,7 @@ export async function buildProposalPdf(s, client, logos) {
   const saving = (r.price - rA.price) * 12
 
   const logoW = await svgToPng(logos.mezuri, '#ffffff')
-  const logoK = await svgToPng(logos.kunlatek, KUNLATEK)
+  const logoM = await svgToPng(logos.mezuri, C.fg) // marca do mezuri em cor escura, para o rodapé
 
   // jsPDF só carrega quando alguém gera uma proposta
   const { jsPDF } = await import('jspdf')
@@ -106,7 +105,7 @@ export async function buildProposalPdf(s, client, logos) {
   const PH = 297
   const M = 18
   const W = PW - 2 * M
-  const LIMIT = PH - 28
+  const LIMIT = PH - 25
   let y = 0
 
   const font = (style, size, color) => {
@@ -135,19 +134,19 @@ export async function buildProposalPdf(s, client, logos) {
 
   // ===== Topo =====
   doc.setFillColor(C.navy)
-  doc.rect(0, 0, PW, 46, 'F')
-  const lh = 19
-  doc.addImage(logoW.url, 'PNG', M, 13.5, lh * logoW.ratio, lh)
+  doc.rect(0, 0, PW, 35, 'F')
+  const lh = 15
+  doc.addImage(logoW.url, 'PNG', M, 10, lh * logoW.ratio, lh)
   font('bold', 8, C.onNavy)
-  rightSpaced('PROPOSTA COMERCIAL', PW - M, 17, 0.6)
+  rightSpaced('PROPOSTA COMERCIAL', PW - M, 12, 0.6)
   font('bold', 12, '#ffffff')
-  doc.text(numero, PW - M, 24.5, { align: 'right' })
+  doc.text(numero, PW - M, 18.5, { align: 'right' })
   font('normal', 9, C.onNavy)
-  doc.text('Emitida em ' + fmtDate(hoje), PW - M, 30.5, { align: 'right' })
-  if (ate) doc.text('Válida até ' + fmtDate(ate), PW - M, 35.5, { align: 'right' })
+  doc.text('Emitida em ' + fmtDate(hoje), PW - M, 24.5, { align: 'right' })
+  if (ate) doc.text('Válida até ' + fmtDate(ate), PW - M, 29.5, { align: 'right' })
 
   // ===== Cliente =====
-  y = 55
+  y = 43
   // dados do cliente são opcionais: só aparece o que foi preenchido
   const titulo = c.empresa || c.nome
   const sub1 = c.empresa ? c.nome : ''
@@ -173,13 +172,13 @@ export async function buildProposalPdf(s, client, logos) {
       font('normal', 9.5, C.fg2)
       contatos.forEach((v, k) => doc.text(doc.splitTextToSize(v, PW - M - colR - 5)[0], titulo ? colR : M + 6, y + 15 + k * 6))
     }
-    y += cardH + 8
+    y += cardH + 6
   }
 
   // ===== Introdução =====
   font('normal', 10.5, C.fg2)
   const intro = doc.splitTextToSize(
-    'O mezuri é a plataforma de gestão feita para escritórios de arquitetura. Projetos, tarefas, prazos e o histórico de responsabilidades e entregas ficam em um só lugar, com acesso por perfil para cada integrante da equipe.',
+    'O mezuri centraliza projetos, tarefas, prazos e o histórico de responsabilidades e entregas do escritório, com acesso por perfil para cada integrante.',
     W
   )
   doc.text(intro, M, y)
@@ -258,7 +257,7 @@ export async function buildProposalPdf(s, client, logos) {
     drawBox(M, half, false, 'PLANO MENSAL', brl(r.price), mL1, `${brl(r.price / r.users)} por usuário ao mês`)
     drawBox(M + half + gap, half, true, 'PLANO ANUAL', brl(rA.price), aL1, aL2, `${discTxt} OFF`)
   }
-  y += BOX + 9
+  y += BOX + 7
 
   // ===== Incluso + próximos passos (duas colunas) =====
   const incluso = [
@@ -266,7 +265,6 @@ export async function buildProposalPdf(s, client, logos) {
     'Histórico de quem fez o quê em cada projeto',
     `Armazenamento de arquivos (${gbTotal} GB)`,
     'Acesso por perfil para cada integrante',
-    'Diagnóstico inicial gratuito e suporte',
   ]
   const passos = ['Aprovação da proposta', 'Criação do ambiente do escritório', 'Diagnóstico gratuito e início do uso']
   const colW = (W - 8) / 2
@@ -297,13 +295,14 @@ export async function buildProposalPdf(s, client, logos) {
     doc.text(p, xr + 6, yr)
     yr += 7.5
   })
-  y = Math.max(yl, yr) + 5
+  y = Math.max(yl, yr) + 3
 
   // ===== Condições =====
   const cond = []
   cond.push(['Pagamento', s.payM.client])
   if (ate) cond.push(['Validade', `${dias} dias, até ${fmtDate(ate)}`])
-  cond.push(['Adicionais', `Usuário extra a ${brl(s.ex)}/mês e armazenamento adicional a ${brl(s.gbPrice)} por GB/mês.`])
+  // adicionais já aparecem itemizados na composição; sem extras, informa o valor para ampliações
+  if (r.extras === 0 || r.gb === 0) cond.push(['Adicionais', `Usuário extra a ${brl(s.ex)}/mês e armazenamento adicional a ${brl(s.gbPrice)} por GB/mês.`])
   if (c.obs) cond.push(['Observações', c.obs])
   section('CONDIÇÕES')
   doc.setDrawColor(C.border)
@@ -311,7 +310,7 @@ export async function buildProposalPdf(s, client, logos) {
   for (const [k, v] of cond) {
     font('normal', 9.5, C.fg2)
     const lines = doc.splitTextToSize(v, W - 36)
-    const h = Math.max(1, lines.length) * 4.6 + 4
+    const h = Math.max(1, lines.length) * 4.6 + 3
     ensure(h)
     font('bold', 9.5, C.fg)
     doc.text(k, M, y + 4)
@@ -322,19 +321,6 @@ export async function buildProposalPdf(s, client, logos) {
     y += 1
   }
 
-  // ===== Aceite =====
-  y += 8
-  ensure(22)
-  label(doc, 'ACEITE', M, y)
-  y += 15
-  doc.setDrawColor(C.light)
-  doc.setLineWidth(0.3)
-  doc.line(M, y, M + W * 0.58, y)
-  doc.line(M + W * 0.66, y, PW - M, y)
-  font('normal', 8, C.muted)
-  doc.text([c.nome, c.empresa].filter(Boolean).join(' · ').slice(0, 80), M, y + 4)
-  doc.text('Data', M + W * 0.66, y + 4)
-
   // ===== Rodapé em todas as páginas =====
   const pages = doc.getNumberOfPages()
   for (let i = 1; i <= pages; i++) {
@@ -343,14 +329,14 @@ export async function buildProposalPdf(s, client, logos) {
     doc.setDrawColor(C.border)
     doc.setLineWidth(0.3)
     doc.line(M, fy, PW - M, fy)
-    font('normal', 8, C.muted)
-    doc.text(c.vendedor ? `${c.vendedor} · mezuri` : 'mezuri · gestão para escritórios de arquitetura', M, fy + 6)
+    const mh = 8
+    doc.addImage(logoM.url, 'PNG', M, fy + 2.5, mh * logoM.ratio, mh)
+    if (c.vendedor) {
+      font('normal', 8, C.muted)
+      doc.text(c.vendedor, M + mh * logoM.ratio + 4, fy + 8)
+    }
     font('normal', 7, C.light)
-    doc.text(`Kunlatek Tecnologia LTDA · CNPJ 36.899.179/0001-08 · ${numero}` + (pages > 1 ? ` · ${i}/${pages}` : ''), M, fy + 10.5)
-    const kh = 6.5
-    doc.addImage(logoK.url, 'PNG', PW - M - kh * logoK.ratio, fy + 4, kh * logoK.ratio, kh)
-    font('normal', 7, C.light)
-    doc.text('Um produto', PW - M - kh * logoK.ratio - 2, fy + 8.5, { align: 'right' })
+    doc.text(`Kunlatek Tecnologia LTDA · CNPJ 36.899.179/0001-08 · ${numero}` + (pages > 1 ? ` · ${i}/${pages}` : ''), M, fy + 14)
   }
 
   const safe = (c.empresa || c.nome || 'cliente').replace(/[\\/:*?"<>|]/g, '')
