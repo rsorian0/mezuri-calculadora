@@ -41,7 +41,7 @@ src/
 - Taxa de pagamento por forma (tabela do link de pagamento do Mercado Pago): cartão 3,99% (30 dias), 4,48% (14 dias), 4,98% (na hora), Pix 0,99% e boleto R$ 3,99 fixo. A forma é escolhida na proposta e alimenta o cálculo do lucro
 - Desconto do plano anual: 15% (editável)
 - Impostos por venda: ISS 2%, PIS 0,65% e COFINS 3% (total 5,65%)
-- Percentual da cooperativa sobre a venda: parâmetro próprio, padrão 0% até ser definido
+- Cooperativa: 5% retidos sobre cada venda (parâmetro editável)
 - Publicação: GitHub Pages pelo workflow `.github/workflows/deploy.yml` (a cada push na `main`)
 
 O PDF mostra ao cliente só preço e condições, nunca custos ou margem.

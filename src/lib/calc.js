@@ -1,6 +1,7 @@
 // Valores do estudo de custos (03/10/2026) e do plano definido.
 export const DEFAULTS = {
   ux: 0,      // usuários extras além dos inclusos (projeção por plano)
+  share: 10,  // clientes ativos entre os quais o custo fixo é dividido
   p: 179,     // mensalidade do plano
   inc: 4,     // usuários inclusos
   ex: 20,     // usuário extra (decidido em 12/11/2026)
@@ -22,7 +23,7 @@ export const DEFAULTS = {
   iss: 2,     // ISS % (definido em 12/11/2026)
   pis: 0.65,  // PIS % (definido em 12/11/2026)
   cofins: 3,  // COFINS % (definido em 12/11/2026)
-  coop: 0,    // % da cooperativa sobre a venda (a definir)
+  coop: 5,    // % da cooperativa sobre a venda (definido em 12/11/2026)
 }
 
 // Formas de pagamento: key = parâmetro com a taxa; fixed = taxa em reais por cobrança
@@ -53,6 +54,7 @@ export function normalize(raw) {
   s.pay = s.payM.id
   s.payRate = s[s.payM.key] // % ou R$ (boleto)
   s.ux = Math.max(0, Math.round(s.ux))
+  s.share = Math.max(1, Math.round(s.share))
   s.inc = Math.round(s.inc)
   s.users = s.inc + s.ux
   s.fix = s.dom + s.srv + s.mail
@@ -83,7 +85,7 @@ export function plan(users, s, annual = false) {
   const tax = (price * s.tax) / 100
   const coop = (price * s.coop) / 100
   const contrib = price - sto - fee - tax - coop
-  const fixShare = s.fix // custo fixo integral, incluso no cálculo da base
+  const fixShare = s.fix / s.share // parcela proporcional do custo fixo por cliente
   const pro = contrib - fixShare
   return {
     users,
@@ -102,6 +104,7 @@ export function plan(users, s, annual = false) {
     fixShare,
     cost: sto + fee + tax + coop + fixShare,
     pro,
+    breakeven: contrib > 0 ? Math.ceil(s.fix / contrib - 1e-9) : null, // clientes para cobrir o custo fixo
     margin: price > 0 ? pro / price : NaN,
   }
 }

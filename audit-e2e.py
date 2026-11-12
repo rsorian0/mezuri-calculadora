@@ -1,7 +1,7 @@
 import re, json, subprocess, os, sys
 from playwright.sync_api import sync_playwright
 
-D=dict(ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=15,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,pay='c30',feePix=0.99,feeC30=3.99,feeC14=4.48,feeC0=4.98,feeBol=3.99,iss=2,pis=0.65,cofins=3,coop=0)
+D=dict(share=10,ux=0,p=179,inc=4,ex=20,gbInc=50,gb=0,gbx=0.036,disc=15,dom=3,srv=42,mail=112,sto=0.6,fx=5.6,pay='c30',feePix=0.99,feeC30=3.99,feeC14=4.48,feeC0=4.98,feeBol=3.99,iss=2,pis=0.65,cofins=3,coop=5)
 def model(o):
     s={**D,**o}
     gbCost=s['sto']*s['fx']/s['gbInc']; gbPrice=round(s['gbx']*s['fx']*100)/100
@@ -11,7 +11,7 @@ def model(o):
     key={'c30':'feeC30','c14':'feeC14','c0':'feeC0','pix':'feePix','bol':'feeBol'}[s['pay']]
     def prof(price,annual=False):
         fee = (s['feeBol']/12 if annual else s['feeBol']) if s['pay']=='bol' else price*s[key]/100
-        return price-sto-fee-price*(s['iss']+s['pis']+s['cofins'])/100-price*s['coop']/100-(s['dom']+s['srv']+s['mail'])
+        return price-sto-fee-price*(s['iss']+s['pis']+s['cofins'])/100-price*s['coop']/100-(s['dom']+s['srv']+s['mail'])/s['share']
     return list_, ann, prof(list_), prof(list_)/list_ if list_ else 0
 
 def num(t):
@@ -58,8 +58,8 @@ with sync_playwright() as p:
     scen=[{}]
     scen+= [{'ux':3},{'ux':0,'gb':10},{'gb':30},{'ux':5,'gb':120},
             {'p':250},{'inc':6},{'inc':6,'ux':2},{'ex':35,'ux':3},{'gbInc':100,'gb':10},{'gbx':0.05,'gb':40},
-            {'disc':0},{'disc':30},{'dom':10},{'srv':60},{'mail':200},{'sto':1.2,'gb':20},{'fx':6.1,'gb':20},
-            {'pay':'pix'},{'pay':'c14'},{'pay':'c0'},{'pay':'bol'},{'pay':'bol','ux':3,'gb':20},{'pay':'pix','feePix':1.5},{'feeC30':4.5},{'pay':'bol','feeBol':5},{'iss':5},{'pis':1},{'cofins':4},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
+            {'disc':0},{'disc':30},{'dom':10},{'share':1},{'share':3,'ux':2},{'share':25,'gb':10},{'srv':60},{'mail':200},{'sto':1.2,'gb':20},{'fx':6.1,'gb':20},
+            {'pay':'pix'},{'pay':'c14'},{'pay':'c0'},{'pay':'bol'},{'pay':'bol','ux':3,'gb':20},{'pay':'pix','feePix':1.5},{'feeC30':4.5},{'pay':'bol','feeBol':5},{'iss':5},{'pis':1},{'cofins':4},{'coop':0},{'coop':10},{'coop':12.5,'ux':2,'gb':10,'disc':20}]
     for o in scen:
         reset_all()
         for k,v in o.items(): setf(k,v)

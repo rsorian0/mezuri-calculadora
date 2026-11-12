@@ -245,3 +245,5 @@ footer.footer .kl:hover .kl-logo, footer.footer .kl:focus-visible .kl-logo { opa
 
 select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 2rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .8rem center; }
 .sub-label { display: block; margin: .25rem 0 -.25rem; font-size: .8rem; color: var(--muted-fg); }
+
+.line.note { color: var(--muted-fg); }

@@ -50,7 +50,10 @@ export default function Params({ raw, s, onChange, saveState, onSave, onDiscard,
           <NumberField {...f('dom')} label="Domínio" prefix="R$" step={0.01} />
           <NumberField {...f('srv')} label="Servidor" prefix="R$" step={0.01} />
         </div>
-        <NumberField {...f('mail')} label="E-mail" prefix="R$" step={0.01} />
+        <div className="row2">
+          <NumberField {...f('mail')} label="E-mail" prefix="R$" step={0.01} />
+          <NumberField {...f('share')} label="Clientes ativos" suffix="cli." min={1} />
+        </div>
       </Group>
 
       <Group title="Custos variáveis" summary="Storage e taxas">
@@ -58,7 +61,6 @@ export default function Params({ raw, s, onChange, saveState, onSave, onDiscard,
           <NumberField {...f('sto')} label="Storage" prefix="US$" step={0.01} />
           <NumberField {...f('fx')} label="Câmbio" prefix="R$" step={0.01} />
         </div>
-        <span className="field-label sub-label">Taxa por forma de pagamento</span>
         <div className="row2">
           <NumberField {...f('feeC30')} label="Cartão · 30 dias" suffix="%" step={0.01} />
           <NumberField {...f('feeC14')} label="Cartão · 14 dias" suffix="%" step={0.01} />

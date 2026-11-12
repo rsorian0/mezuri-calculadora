@@ -29,11 +29,13 @@ export default function Results({ s, r }) {
           <Line label={`Impostos (ISS ${fmtP(s.iss)} + PIS ${fmtP(s.pis)} + COFINS ${fmtP(s.cofins)})`} value={brl(r.tax)} minus />
           {s.coop > 0 && <Line label={`Cooperativa (${fmtP(s.coop)})`} value={brl(r.coop)} minus />}
           <Line label="Contribuição (antes do custo fixo)" value={brl(r.contrib)} className="sep" />
-          <Line label="Custo fixo (domínio + servidor + e-mail)" value={brl(r.fixShare)} minus />
+          <Line label="Custo fixo total (domínio + servidor + e-mail)" value={brl(s.fix)} className="note" />
+          <Line label={`Parcela por cliente (${brl(s.fix)} ÷ ${plural(s.share, 'cliente', 'clientes')})`} value={brl(r.fixShare)} minus />
           <div className="line total">
             <span className="l">Lucro do escritório</span>
             <span>{brl(r.pro)} · {pct(r.margin)}</span>
           </div>
+          <Line label="Ponto de equilíbrio do custo fixo" value={r.breakeven ? plural(r.breakeven, 'cliente', 'clientes') : 'sem retorno'} className="note" />
         </div>
       </details>
     </div>
