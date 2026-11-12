@@ -132,17 +132,27 @@ with sync_playwright() as p:
     pg.click('button:has-text("Restaurar padrão")'); pg.wait_for_timeout(100)
     if pg.input_value('#p')!='179': fails.append('Restaurar padrão falhou')
     while pg.locator('aside details:not([open]) > summary').count(): pg.locator('aside details:not([open]) > summary').first.click()
-    # proposta: validação
-    pg.click('button:has-text("Gerar PDF da proposta")'); pg.wait_for_timeout(200)
-    t=pg.inner_text('body')
-    for msg in ['Nome do contato obrigatório','Nome da empresa obrigatório','Telefone com DDD','E-mail inválido']:
-        if msg not in t: fails.append('validação ausente: '+msg)
+    # proposta: dados do cliente opcionais; máscara de telefone
     pg.fill('#telefone','82999998888')
     if pg.input_value('#telefone')!='(82) 99999-8888': fails.append('máscara telefone: '+pg.input_value('#telefone'))
     pg.fill('#telefone','8233334444')
     if pg.input_value('#telefone')!='(82) 3333-4444': fails.append('máscara fixo: '+pg.input_value('#telefone'))
-    pg.fill('#email','x@y'); pg.click('button:has-text("Gerar PDF da proposta")'); pg.wait_for_timeout(150)
-    if 'E-mail inválido' not in pg.inner_text('body'): fails.append('email inválido aceito')
+    pg.fill('#telefone','')
+    for case,vals in [('vazio',{}),('só nome',{'nome':'Maria Souza'}),('só e-mail',{'email':'a@b.com.br'})]:
+        for k in ['nome','empresa','telefone','email']: pg.fill(f'#{k}','')
+        for k,v in vals.items(): pg.fill(f'#{k}',v)
+        try:
+            with pg.expect_download(timeout=15000) as d: pg.click('button:has-text("Gerar PDF da proposta")')
+        except Exception as e:
+            fails.append(f'PDF {case}: não gerou'); continue
+        pth=f'/tmp/audit/opt-{case.replace(" ","_")}.pdf'; os.makedirs('/tmp/audit',exist_ok=True); d.value.save_as(pth)
+        tx=subprocess.run(['pdftotext','-layout',pth,'-'],capture_output=True,text=True).stdout
+        if case=='vazio' and ('PREPARADA PARA' in tx or 'CONTATO' in tx): fails.append('PDF vazio: cartão do cliente indevido')
+        if case=='só nome' and ('Maria Souza' not in tx or 'CONTATO' in tx): fails.append('PDF só nome incorreto')
+        if case=='só e-mail' and ('a@b.com.br' not in tx or 'PREPARADA PARA' in tx): fails.append('PDF só e-mail incorreto')
+        if 'undefined' in tx or 'NaN' in tx: fails.append(f'PDF {case}: undefined/NaN')
+        if 'mezuri' not in d.value.suggested_filename: fails.append('nome do arquivo')
+        print(case, d.value.suggested_filename)
     # PDFs
     os.makedirs('/tmp/audit',exist_ok=True)
     def gen(mod,tag,pu=None,gb=None,extra=None,pay=None):

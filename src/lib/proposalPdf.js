@@ -148,22 +148,33 @@ export async function buildProposalPdf(s, client, logos) {
 
   // ===== Cliente =====
   y = 55
-  const cardH = 26
-  doc.setFillColor(C.soft)
-  doc.setDrawColor(C.border)
-  doc.setLineWidth(0.3)
-  doc.roundedRect(M, y, W, cardH, 2, 2, 'FD')
-  const colR = M + W * 0.6
-  label(doc, 'PREPARADA PARA', M + 6, y + 7.5)
-  font('bold', 14, C.fg)
-  doc.text(doc.splitTextToSize(c.empresa, colR - M - 12)[0], M + 6, y + 15)
-  font('normal', 10, C.fg2)
-  doc.text(c.nome, M + 6, y + 21)
-  label(doc, 'CONTATO', colR, y + 7.5)
-  font('normal', 9.5, C.fg2)
-  doc.text(c.telefone, colR, y + 15)
-  doc.text(doc.splitTextToSize(c.email, PW - M - colR - 5)[0], colR, y + 21)
-  y += cardH + 8
+  // dados do cliente são opcionais: só aparece o que foi preenchido
+  const titulo = c.empresa || c.nome
+  const sub1 = c.empresa ? c.nome : ''
+  const contatos = [c.telefone, c.email].filter(Boolean)
+  if (titulo || contatos.length) {
+    const cardH = 26
+    doc.setFillColor(C.soft)
+    doc.setDrawColor(C.border)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(M, y, W, cardH, 2, 2, 'FD')
+    const colR = M + W * 0.6
+    if (titulo) {
+      label(doc, 'PREPARADA PARA', M + 6, y + 7.5)
+      font('bold', 14, C.fg)
+      doc.text(doc.splitTextToSize(titulo, (contatos.length ? colR - M - 12 : W - 12))[0], M + 6, y + 15)
+      if (sub1) {
+        font('normal', 10, C.fg2)
+        doc.text(sub1, M + 6, y + 21)
+      }
+    }
+    if (contatos.length) {
+      label(doc, 'CONTATO', titulo ? colR : M + 6, y + 7.5)
+      font('normal', 9.5, C.fg2)
+      contatos.forEach((v, k) => doc.text(doc.splitTextToSize(v, PW - M - colR - 5)[0], titulo ? colR : M + 6, y + 15 + k * 6))
+    }
+    y += cardH + 8
+  }
 
   // ===== Introdução =====
   font('normal', 10.5, C.fg2)
@@ -321,7 +332,7 @@ export async function buildProposalPdf(s, client, logos) {
   doc.line(M, y, M + W * 0.58, y)
   doc.line(M + W * 0.66, y, PW - M, y)
   font('normal', 8, C.muted)
-  doc.text(`${c.nome} · ${c.empresa}`.slice(0, 80), M, y + 4)
+  doc.text([c.nome, c.empresa].filter(Boolean).join(' · ').slice(0, 80), M, y + 4)
   doc.text('Data', M + W * 0.66, y + 4)
 
   // ===== Rodapé em todas as páginas =====
@@ -342,7 +353,7 @@ export async function buildProposalPdf(s, client, logos) {
     doc.text('Um produto', PW - M - kh * logoK.ratio - 2, fy + 8.5, { align: 'right' })
   }
 
-  const safe = c.empresa.replace(/[\\/:*?"<>|]/g, '')
+  const safe = (c.empresa || c.nome || 'cliente').replace(/[\\/:*?"<>|]/g, '')
   return { doc, name: `Proposta mezuri - ${safe}.pdf` }
 }
 

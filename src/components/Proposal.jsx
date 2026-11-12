@@ -30,20 +30,9 @@ function maskPhone(v) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
-function validate(c) {
-  const e = {}
-  if (!c.nome.trim()) e.nome = 'Nome do contato obrigatório.'
-  if (!c.empresa.trim()) e.empresa = 'Nome da empresa obrigatório.'
-  const digits = c.telefone.replace(/\D/g, '')
-  if (digits.length < 10) e.telefone = 'Telefone com DDD (10 ou 11 dígitos).'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email.trim())) e.email = 'E-mail inválido.'
-  return e
-}
-
 export default function Proposal({ s, rM, rA, mod, onMod, discValue, onDisc, onPay, logos }) {
   const r = rM
   const [c, setC] = useState(EMPTY)
-  const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const timer = useRef()
@@ -57,19 +46,10 @@ export default function Proposal({ s, rM, rA, mod, onMod, discValue, onDisc, onP
   const change = (id, value) => {
     const v = id === 'telefone' ? maskPhone(value) : value
     setC((prev) => ({ ...prev, [id]: v }))
-    if (errors[id]) setErrors((prev) => ({ ...prev, [id]: undefined }))
   }
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    const errs = validate(c)
-    setErrors(errs)
-    const first = ['nome', 'empresa', 'telefone', 'email'].find((k) => errs[k])
-    if (first) {
-      document.getElementById(first)?.focus()
-      toast('Dados do cliente obrigatórios para gerar o PDF.', true)
-      return
-    }
     setBusy(true)
     toast('Gerando PDF...', false, true)
     try {
@@ -87,17 +67,17 @@ export default function Proposal({ s, rM, rA, mod, onMod, discValue, onDisc, onP
   }
 
 
-  const f = (id) => ({ id, value: c[id], onChange: change, error: errors[id] })
+  const f = (id) => ({ id, value: c[id], onChange: change })
 
   return (
     <div className="card" id="proposta">
       <Step n={3} title="Proposta para o cliente" />
       <form className="prop-grid" onSubmit={onSubmit} noValidate>
         <div className="section-label first full">Cliente</div>
-        <TextField {...f('nome')} label="Nome do contato" placeholder="Nome e sobrenome" required autoComplete="name" />
-        <TextField {...f('empresa')} label="Empresa" placeholder="Razão social ou nome do escritório" required autoComplete="organization" />
-        <TextField {...f('telefone')} label="Telefone" type="tel" placeholder="(00) 00000-0000" required autoComplete="tel" inputMode="tel" />
-        <TextField {...f('email')} label="E-mail" type="email" placeholder="nome@empresa.com.br" required autoComplete="email" inputMode="email" />
+        <TextField {...f('nome')} label="Nome do contato" placeholder="Nome e sobrenome" autoComplete="name" />
+        <TextField {...f('empresa')} label="Empresa" placeholder="Razão social ou nome do escritório" autoComplete="organization" />
+        <TextField {...f('telefone')} label="Telefone" type="tel" placeholder="(00) 00000-0000" autoComplete="tel" inputMode="tel" />
+        <TextField {...f('email')} label="E-mail" type="email" placeholder="nome@empresa.com.br" autoComplete="email" inputMode="email" />
 
         <div className="section-label full">Condições</div>
         <div className="field full">
